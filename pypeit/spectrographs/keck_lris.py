@@ -597,14 +597,43 @@ class KeckLRISSpectrograph(spectrograph.Spectrograph):
 
         # Trim down by detector
         # TODO -- Deal with Mark4
-        max_spat = 2048//bin_spat
+        left_edges = []
+        #for islit in x_order:
+        for islit in range(self.slitmask.nslits):
+            sep = mask_coord.separation(slit_coords[islit])
+            PA = mask_coord.position_angle(slit_coords[islit])
+            #
+            alpha = sep.to('arcsec') * np.cos(PA-self.slitmask.posx_pa*units.deg)
+            #delta = sep.to('arcsec') * np.sin(PA-self.slitmask.posx_pa*units.deg)
+            dx_pix = (alpha.value-self.slitmask.onsky[islit,2]/2.) / (platescale*bin_spat)
+            # target is the slit number
+            left_edges.append(np.round(dx_pix))
+        left_edges = np.array(left_edges, dtype=int)
+
+        # Build up the right edges
+        right_edges = left_edges + np.round(
+            self.slitmask.onsky[:,2]/(platescale*bin_spat)).astype(int)
+
+        # Center of slit
+        centers = (left_edges + right_edges)/2.
+        # Trim down by detector
+        # TODO -- Deal with Mark4
+        if self.name == 'keck_lris_red_mark4':
+            center_spat = 2064//bin_spat
+            max_spat = 4132//bin_spat
+        else:
+            max_spat = 2048//bin_spat
         if ccdnum == 1:
             if self.name == 'keck_lris_red':
                 good = centers < 0.
                 xstart = max_spat + 160//bin_spat  # The 160 is for the chip gap
             elif self.name == 'keck_lris_blue':
                 good = centers < 0.
-                xstart = max_spat + 30//bin_spat  
+                xstart = max_spat + 30//bin_spat
+            elif self.name == 'keck_lris_red_mark4':
+                good = np.full_like(centers, True, dtype=bool)
+                xstart = center_spat + 101//bin_spat # No chip gap. So not sure why this offset is needed.
+                # It is definitely needed though!
             else:
                 msgs.error(f'Not ready to use slitmasks for {self.name}.  Develop it!')
         else:
@@ -613,13 +642,15 @@ class KeckLRISSpectrograph(spectrograph.Spectrograph):
                 xstart = -48//bin_spat
             else:             
                 msgs.error(f'Not ready to use slitmasks for {self.name}.  Develop it!')
+        import pdb; pdb.set_trace()
         left_edges += xstart
         right_edges += xstart
         left_edges[~good] = -1
 
         # Toss any left edges off the right-side of the detector
-        keep = left_edges < max_spat
-        left_edges[~keep] = -1
+        if self.name!='keck_lris_red_mark4':
+            keep = left_edges < max_spat
+            left_edges[~keep] = -1
 
         right_edges[left_edges == -1] = -1
         # Deal with right edge off the detector
