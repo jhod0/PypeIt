@@ -594,7 +594,6 @@ class KeckLRISSpectrograph(spectrograph.Spectrograph):
         #tmp = left_edges.copy()
         #tmp.sort()
         #tmp2 = tmp + (380-tmp[0])
-        #embed(header='597 of keck lris')
 
         # Build up the right edges
         right_edges = left_edges + np.round(
@@ -670,9 +669,13 @@ class KeckLRISSpectrograph(spectrograph.Spectrograph):
                 left_edges[islit] = 0
 
         # Order from left to right
-        # Highest x is leftmost on DET=1
+        # Highest x is leftmost on DET=1 except for MARK4 (I think)
+        #embed(header='597 of keck lris')
         x_order = np.argsort(self.slitmask.corners[:,1,0])
-        sortindx = x_order[::-1]
+        if self.name != 'keck_lris_red_mark4':
+            sortindx = x_order[::-1]
+        else:
+            sortindx = x_order
 
         # Return
         return left_edges.astype(float), right_edges.astype(float), sortindx, self.slitmask
