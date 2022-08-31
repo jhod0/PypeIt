@@ -3,6 +3,7 @@ Module for LRIS specific methods.
 
 .. include:: ../include/links.rst
 """
+from email import header
 import glob
 import os
 from IPython import embed
@@ -584,7 +585,7 @@ class KeckLRISSpectrograph(spectrograph.Spectrograph):
             #
             alpha = sep.to('arcsec') * np.cos(PA-self.slitmask.posx_pa*units.deg)
             # Flip?
-            if self.name == 'keck_lris_red_mark4':
+            if self.name == 'XXkeck_lris_red_mark4':
                 alpha *= -1
             #delta = sep.to('arcsec') * np.sin(PA-self.slitmask.posx_pa*units.deg)
             dx_pix = (alpha.value-self.slitmask.onsky[islit,2]/2.) / (platescale*bin_spat)
@@ -593,7 +594,8 @@ class KeckLRISSpectrograph(spectrograph.Spectrograph):
         left_edges = np.array(left_edges, dtype=int)
         #tmp = left_edges.copy()
         #tmp.sort()
-        #tmp2 = tmp + (380-tmp[0])
+        #tmp2 = tmp + (422-tmp[0])
+        #embed(header='598 of keck_lris')
 
         # Build up the right edges
         right_edges = left_edges + np.round(
@@ -640,7 +642,7 @@ class KeckLRISSpectrograph(spectrograph.Spectrograph):
                 xstart = max_spat + 30//bin_spat
             elif self.name == 'keck_lris_red_mark4':
                 good = np.full_like(centers, True, dtype=bool)
-                xstart = 2038//bin_spat
+                xstart = 2080//bin_spat  # Checked by hand by JXP
             else:
                 msgs.error(f'Not ready to use slitmasks for {self.name}.  Develop it!')
         else:
@@ -672,7 +674,7 @@ class KeckLRISSpectrograph(spectrograph.Spectrograph):
         # Highest x is leftmost on DET=1 except for MARK4 (I think)
         #embed(header='597 of keck lris')
         x_order = np.argsort(self.slitmask.corners[:,1,0])
-        if self.name != 'keck_lris_red_mark4':
+        if self.name != 'XXkeck_lris_red_mark4':
             sortindx = x_order[::-1]
         else:
             sortindx = x_order
@@ -1381,7 +1383,7 @@ class KeckLRISRMark4Spectrograph(KeckLRISRSpectrograph):
             dataext=0,
             specaxis=0,
             specflip=True,  
-            spatflip=False,
+            spatflip=True,      # Aligns the chip with the mask design info
             #platescale=0.123,  # From the web page
             platescale=0.1344,  # Inserted by X based on mask design
             darkcurr=0.0,
